@@ -7,8 +7,9 @@ val flinkDependencies = Seq(
   ,"org.apache.flink" %% "flink-streaming-scala" % flinkVersion % "provided"
 
   // testing
-  ,"org.scalatest" %% "scalatest" % "2.2.4" % "test"
-
+  ,"org.scalactic" %% "scalactic" % "3.1.0"
+  ,"org.scalatest" %% "scalatest" % "3.1.0" % "test"
+  ,"org.scalacheck" %% "scalacheck" % "1.14.1" % "test"
 )
 
 lazy val root = (project in file(".")).
