@@ -84,3 +84,21 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield pair
   }
 }
+
+object GenJoinInput {
+  def print(xy: Seq[(Option[A], Option[B])], tagPP: String) = {
+    for {
+      ((x, y), i) <- xy.sorted(Ordering[(Int,Int)].on((a:(Option[A], Option[B])) => (a._1.map(_.id).getOrElse(0),a._2.map(_.ida).getOrElse(0)))).zipWithIndex
+    } {
+      println(Seq(
+        tagPP,
+        i,
+        x.map(_.ts).getOrElse(""),
+        x.map(_.id).getOrElse(""),
+        y.map(_.ida).getOrElse(""),
+        y.map(_.id).getOrElse(""),
+        y.map(_.ts).getOrElse("")
+      ).mkString("\t"))
+    }
+  }
+}
