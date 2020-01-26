@@ -16,9 +16,36 @@ class JoinSpec extends AnyFunSuite {
   val seed = Seed(123)
   val numSamples = 100
   val dtMax = 10000L
-  registerTest("FlinkEnv runs")(new FlinkTestEnv {
+
+  private def calcXY : List[(Option[A], Option[B])] = {
     val gen = new GenJoinInput(1000000000L, 1000000L)
-    val xy : List[(Option[A],Option[B])] = Gen.listOfN(numSamples,gen.genPair).apply(Gen.Parameters.default, seed).get
+    val xy: List[(Option[A], Option[B])] = Gen.listOfN(numSamples, gen.genPair).apply(Gen.Parameters.default, seed).get
+    xy
+  }
+
+  def ktFromXY(ab:((Option[A], Option[B]))) = {
+    ab match {
+      case (Some(a),Some(b)) => (a.id.toString,Math.max(a.ts, b.ts))
+      case (Some(a),None) => (a.id.toString,a.ts)
+      case (Some(a),Some(b)) => (b.id.toString,b.ts)
+      case _ => throw new RuntimeException("Internal error")
+    }
+  }
+
+  registerTest("can generate join input")(new FlinkTestEnv {
+    val xy = calcXY
+    assert(xy.length == numSamples)
+    for(z <- xy) {
+      z match {
+        case (Some(x),Some(y)) =>
+          assert(x.id == y.ida)
+        case _ =>
+      }
+    }
+  })
+
+  registerTest("FlinkEnv runs")(new FlinkTestEnv {
+    val xy = calcXY
     val x : List[A] = xy.flatMap(_._1)
     val y : List[B] = xy.flatMap(_._2)
     val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
@@ -31,16 +58,9 @@ class JoinSpec extends AnyFunSuite {
       .apply(cgf1)
 
     val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy)
-    def ktFromXY(ab:((Option[A], Option[B]))) = {
-      ab match {
-        case (Some(a),Some(b)) => (a.id.toString,Math.max(a.ts, b.ts))
-        case (Some(a),None) => (a.id.toString,a.ts)
-        case (Some(a),Some(b)) => (b.id.toString,b.ts)
-        case _ => throw new RuntimeException("Internal error")
-      }
-    }
     val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromXY).get()
+    assert(sink.asSeq().length >= numSamples)
     assert(actual.length == numSamples)
-    assert(xy.length == numSamples)
   })
+
 }
