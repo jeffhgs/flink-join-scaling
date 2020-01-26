@@ -25,10 +25,10 @@ class JoinSpec extends AnyFunSuite {
 
   def ktFromXY(ab:((Option[A], Option[B]))) = {
     ab match {
-      case (Some(a),Some(b)) => Seq((a.id.toString,Math.max(a.ts, b.ts)))
-      case (Some(a),None) => Seq((a.id.toString,a.ts))
-      case (Some(a),Some(b)) => Seq((b.id.toString,b.ts))
-      case _ => Seq()
+      case (Some(a),Some(b)) => (a.id.toString,Math.max(a.ts, b.ts))
+      case (Some(a),None) => (a.id.toString,a.ts)
+      case (Some(a),Some(b)) => (b.id.toString,b.ts)
+      case _ => throw new RuntimeException("Internal error")
     }
   }
 

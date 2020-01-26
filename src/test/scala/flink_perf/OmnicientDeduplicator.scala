@@ -1,13 +1,11 @@
 package flink_perf
 
 import scala.collection.mutable
-class OmnicientDeduplicator[X](xs:Seq[X], ktFromX:(X => Seq[(String,Long)])) {
+class OmnicientDeduplicator[X](xs:Seq[X], ktFromX:(X => (String,Long))) {
   val mp = mutable.Map[String,(Long,X)]()
   def get() = {
-    for(
-      x <- xs;
-      (k,t) <- ktFromX(x)
-    ) {
+    for(x <- xs) {
+      val (k,t) = ktFromX(x)
       mp.get(k) match {
         case Some((t0,x0)) =>
           if(t > t0)
