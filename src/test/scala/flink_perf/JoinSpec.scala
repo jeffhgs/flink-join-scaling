@@ -27,7 +27,7 @@ class JoinSpec extends AnyFunSuite {
     ab match {
       case (Some(a),Some(b)) => (a.id.toString,Math.max(a.ts, b.ts))
       case (Some(a),None) => (a.id.toString,a.ts)
-      case (Some(a),Some(b)) => (b.id.toString,b.ts)
+      case (None,Some(b)) => (b.id.toString,b.ts)
       case _ => throw new RuntimeException("Internal error")
     }
   }
