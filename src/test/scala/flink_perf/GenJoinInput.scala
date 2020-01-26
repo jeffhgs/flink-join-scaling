@@ -50,7 +50,6 @@ class GenJoinInput(tMax: Long, dtMax: Long) {
 
   def genA(ida: Int):Gen[A] = {
     for{
-      ida <- arbitrary[Int];
       dt <- Gen.choose(0, dtMax);
       ts = tMax - dt
     } yield A(ida, ts)
