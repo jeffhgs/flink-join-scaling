@@ -81,7 +81,6 @@ class GenJoinInput(tMax: Long, dtMax: Long) {
   def genPair : Gen[(Option[A], Option[B])] = {
     for {
       ida <- arbitrary[Int];
-      seed = Seed(ida);
       pair <- genPair(ida)
     } yield pair
   }
