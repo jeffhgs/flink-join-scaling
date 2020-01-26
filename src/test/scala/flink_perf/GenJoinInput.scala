@@ -43,7 +43,7 @@ class BTimestampAsssigner(maxDt:Time) extends BoundedOutOfOrdernessTimestampExtr
 }
 
 
-class GenJoinInput(tMax: Long, dtMax: Long) {
+class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
   import org.scalacheck._
   import Gen._
   import Arbitrary.arbitrary
@@ -57,7 +57,7 @@ class GenJoinInput(tMax: Long, dtMax: Long) {
 
   def genB(ida: Int) = {
     for{
-      idb <- arbitrary[Int];
+      idb <- Gen.choose(0, idMax);
       dt <- Gen.choose(0, dtMax);
       ts = tMax - dt
     } yield B(idb, ts, ida)
@@ -79,7 +79,7 @@ class GenJoinInput(tMax: Long, dtMax: Long) {
 
   def genPair : Gen[(Option[A], Option[B])] = {
     for {
-      ida <- arbitrary[Int];
+      ida <- Gen.choose(0, idMax);
       pair <- genPair(ida)
     } yield pair
   }
