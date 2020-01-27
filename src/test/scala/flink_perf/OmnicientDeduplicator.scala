@@ -8,8 +8,10 @@ class OmnicientDeduplicator[X](xs:Seq[X], ktFromX:(X => (String,Long))) {
       val (k,t) = ktFromX(x)
       mp.get(k) match {
         case Some((t0,x0)) =>
-          if(t > t0)
-            mp.put(k,(t,x))
+          if(t > t0) {
+            mp.remove(k)
+            mp.put(k, (t, x))
+          }
         case None =>
           mp.put(k,(t,x))
       }
