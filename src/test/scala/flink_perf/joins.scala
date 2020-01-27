@@ -41,9 +41,6 @@ object joins {
         .where(_.id)
         .equalTo(_.id)
         .window(GlobalWindows.create())
-        //.window(EventTimeSessionWindows.withGap(Time.seconds(1)))
-        //.trigger(ProcessingTimeTrigger.create())
-        //.trigger(org.apache.flink.streaming.api.windowing.triggers.ProcessingTimeTrigger.create())
         .trigger(CountTrigger.of(1))
         .apply(cgf1)(_tixy2)
     }
