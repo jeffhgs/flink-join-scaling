@@ -63,9 +63,9 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield B(idb, ts, ida)
   }
 
-  def genABPair(ida: Int): Gen[(Option[A], Option[B])] = {
+  def genABPair(ida: Int, outer:Boolean): Gen[(Option[A], Option[B])] = {
     for (
-      k <- Gen.choose(1, 3);
+      k <- Gen.choose(1, if(outer) 3 else 2);
       a <- genA(ida);
       b <- genB(ida)
     ) yield {
@@ -77,10 +77,10 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     }
   }
 
-  def genABPair : Gen[(Option[A], Option[B])] = {
+  def genABPair(outer:Boolean) : Gen[(Option[A], Option[B])] = {
     for {
       ida <- Gen.choose(0, idMax);
-      pair <- genABPair(ida)
+      pair <- genABPair(ida, outer)
     } yield pair
   }
 }

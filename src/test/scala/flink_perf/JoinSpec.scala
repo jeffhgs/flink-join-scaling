@@ -17,9 +17,9 @@ class JoinSpec extends AnyFunSuite {
   val numSamples = 100
   val dtMax = 10000L
 
-  private def calcXY : List[(Option[A], Option[B])] = {
+  private def calcXY(outer:Boolean) : List[(Option[A], Option[B])] = {
     val gen = new GenJoinInput(1000000000L, 1000000L, 1000000)
-    val xy: List[(Option[A], Option[B])] = Gen.listOfN(numSamples, gen.genABPair).apply(Gen.Parameters.default, seed).get
+    val xy: List[(Option[A], Option[B])] = Gen.listOfN(numSamples, gen.genABPair(outer)).apply(Gen.Parameters.default, seed).get
     xy
   }
 
@@ -33,7 +33,7 @@ class JoinSpec extends AnyFunSuite {
   }
 
   registerTest("can generate join input")(new FlinkTestEnv {
-    val xy = calcXY
+    val xy = calcXY(true)
     assert(xy.length == numSamples)
     for(z <- xy) {
       z match {
@@ -45,7 +45,7 @@ class JoinSpec extends AnyFunSuite {
   })
 
   registerTest("FlinkEnv runs")(new FlinkTestEnv {
-    val xy = calcXY
+    val xy = calcXY(true)
     val x : List[A] = xy.flatMap(_._1)
     val y : List[B] = xy.flatMap(_._2)
     val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
