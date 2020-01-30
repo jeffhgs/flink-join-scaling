@@ -66,4 +66,12 @@ class JoinSpec extends AnyFunSuite {
     assert(actual.length == numSamples)
   })
 
+  test("Deduplicator catches duplicate") {
+    val xy = List(
+      (None, Some(B(914090,999988501, 4059))),
+      (Some(A(4059, 999440747)), Some(B(914090,999988501, 4059)))
+    )
+    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](xy, ktFromXY).get()
+    assert(actual.length == 1)
+  }
 }
