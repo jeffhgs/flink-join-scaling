@@ -39,7 +39,7 @@ object joins {
       implicit val _tixy2 = createTypeInformation[(Option[A], Option[B])]
       x.keyBy(_.id).coGroup(y.keyBy(_.ida))
         .where(_.id)
-        .equalTo(_.id)
+        .equalTo(_.ida)
         .window(GlobalWindows.create())
         .trigger(CountTrigger.of(1))
         .apply(cgf1)(_tixy2)
