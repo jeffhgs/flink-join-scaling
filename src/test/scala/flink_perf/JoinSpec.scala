@@ -19,7 +19,7 @@ class JoinSpec extends AnyFunSuite {
 
   private def calcXY : List[(Option[A], Option[B])] = {
     val gen = new GenJoinInput(1000000000L, 1000000L, 1000000)
-    val xy: List[(Option[A], Option[B])] = Gen.listOfN(numSamples, gen.genPair).apply(Gen.Parameters.default, seed).get
+    val xy: List[(Option[A], Option[B])] = Gen.listOfN(numSamples, gen.genABPair).apply(Gen.Parameters.default, seed).get
     xy
   }
 
