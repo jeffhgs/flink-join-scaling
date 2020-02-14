@@ -32,17 +32,4 @@ object joins {
       }
     }
   }
-  case class JoinFullOuterByCogroup(tFromX:(A => Long), tFromY:(B=>Long)) {
-    import scala.collection.JavaConversions._
-    def join(x:DataStream[A], y:DataStream[B])(implicit _tix : TypeInformation[A], _tiy : TypeInformation[B]) : DataStream[(Option[A],Option[B])] = {
-      implicit val _tixy = createTypeInformation[(A,B)]
-      implicit val _tixy2 = createTypeInformation[(Option[A], Option[B])]
-      x.keyBy(_.id).coGroup(y.keyBy(_.ida))
-        .where(_.id)
-        .equalTo(_.ida)
-        .window(GlobalWindows.create())
-        .trigger(CountTrigger.of(1))
-        .apply(cgf1)(_tixy2)
-    }
-  }
 }
