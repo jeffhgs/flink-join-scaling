@@ -44,7 +44,7 @@ class JoinSpec extends AnyFunSuite {
     }
   })
 
-  registerTest("FlinkEnv runs")(new FlinkTestEnv {
+  registerTest("join output is expected")(new FlinkTestEnv {
     val xy = calcXY(true)
     val x : List[A] = xy.flatMap(_._1)
     val y : List[B] = xy.flatMap(_._2)
@@ -62,6 +62,26 @@ class JoinSpec extends AnyFunSuite {
     val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromXY).get()
     GenJoinInput.print(xy, "E")
     GenJoinInput.print(actual, "A")
+    assert(sink.asSeq().length >= numSamples)
+    assert(actual.length == numSamples)
+  })
+
+  registerTest("join monitoring")(new FlinkTestEnv {
+    val xy = calcXY(true)
+    val x : List[A] = xy.flatMap(_._1)
+    val y : List[B] = xy.flatMap(_._2)
+    val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinxy = dsx.keyBy(_.id).coGroup(dsy.keyBy(_.ida))
+      .where(_.id)
+      .equalTo(_.ida)
+      .window(GlobalWindows.create())
+      .trigger(CountTrigger.of(1))
+      .apply(cgf1)
+
+    val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy)
+    env.execute()
+    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromXY).get()
     assert(sink.asSeq().length >= numSamples)
     assert(actual.length == numSamples)
   })
