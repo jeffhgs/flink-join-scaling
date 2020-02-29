@@ -26,6 +26,7 @@ object GenTree {
   def genTree: Gen[Tree] = oneOf(genLeaf, lzy(genNode))
 }
 
+case class CfgCardinality(leftOptional:Boolean)
 
 case class A(id: Int, ts:Long)
 case class B(id: Int, ts:Long, ida:Int)
@@ -63,9 +64,9 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield B(idb, ts, ida)
   }
 
-  def genABPair(ida: Int, outer:Boolean): Gen[(Option[A], Option[B])] = {
+  def genABPair(ida: Int, config:CfgCardinality): Gen[(Option[A], Option[B])] = {
     for (
-      k <- Gen.choose(1, if(outer) 3 else 2);
+      k <- Gen.choose(1, if(config.leftOptional) 3 else 2);
       a <- genA(ida);
       b <- genB(ida)
     ) yield {
@@ -77,10 +78,10 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     }
   }
 
-  def genABPair(outer:Boolean) : Gen[(Option[A], Option[B])] = {
+  def genABPair(cfg:CfgCardinality) : Gen[(Option[A], Option[B])] = {
     for {
       ida <- Gen.choose(0, idMax);
-      pair <- genABPair(ida, outer)
+      pair <- genABPair(ida, cfg)
     } yield pair
   }
 }
