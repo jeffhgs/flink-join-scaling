@@ -57,12 +57,20 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield A(ida, ts)
   }
 
-  def genPair[V](ida: Int, config:CfgCardinality, genV:Int=>Gen[V]): Gen[(Option[A], Seq[V])] = {
+  def genPair[V](ida: Int, rightDist:CfgUniform, genV:Int=>Gen[V]): Gen[Seq[V]] = {
+    for (
+      numBs <- Gen.choose(0, rightDist.numMax);
+      v <- Gen.listOfN(numBs, genV(ida))
+    ) yield {
+      v
+    }
+  }
+
+  def genABOptPair[V](ida: Int, config:CfgCardinality, genV:Int=>Gen[V]): Gen[(Option[A], Seq[V])] = {
     for (
       k <- Gen.choose(1, if(config.leftOptional) 2 else 1);
-      numBs <- Gen.choose(0,config.rightDist.numMax);
       a <- genA(ida);
-      v <- Gen.listOfN(numBs, genV(ida))
+      v <- genPair(ida,config.rightDist,genV)
     ) yield {
       k match {
         case 1 => (Some(a),v)
@@ -82,7 +90,7 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
   def genABPair(cfg:CfgCardinality) : Gen[(Option[A], Seq[B])] = {
     for {
       ida <- Gen.choose(0, idMax);
-      pair <- genPair(ida, cfg, genB)
+      pair <- genABOptPair(ida, cfg, genB)
     } yield pair
   }
 
