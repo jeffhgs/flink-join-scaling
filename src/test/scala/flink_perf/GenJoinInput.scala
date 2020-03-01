@@ -57,7 +57,7 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield A(ida, ts)
   }
 
-  def genPair[V](ida: Int, rightDist:CfgUniform, genV:Int=>Gen[V]): Gen[Seq[V]] = {
+  def genEntity[V](ida: Int, rightDist:CfgUniform, genV:Int=>Gen[V]): Gen[Seq[V]] = {
     for (
       numBs <- Gen.choose(0, rightDist.numMax);
       v <- Gen.listOfN(numBs, genV(ida))
@@ -70,7 +70,7 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     for (
       k <- Gen.choose(1, if(config.leftOptional) 2 else 1);
       a <- genA(ida);
-      v <- genPair(ida,config.rightDist,genV)
+      v <- genEntity(ida,config.rightDist,genV)
     ) yield {
       k match {
         case 1 => (Some(a),v)
