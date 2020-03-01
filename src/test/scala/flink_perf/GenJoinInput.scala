@@ -26,7 +26,8 @@ object GenTree {
   def genTree: Gen[Tree] = oneOf(genLeaf, lzy(genNode))
 }
 
-case class CfgCardinality(leftOptional:Boolean)
+case class CfgUniform(numMax:Int)
+case class CfgCardinality(leftOptional:Boolean, rightDist:CfgUniform=CfgUniform(1))
 
 case class A(id: Int, ts:Long)
 case class B(id: Int, ts:Long, ida:Int)
@@ -64,25 +65,37 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield B(idb, ts, ida)
   }
 
-  def genABPair(ida: Int, config:CfgCardinality): Gen[(Option[A], Option[B])] = {
+  def genBs(ida: Int,numBs:Int) : Gen[List[B]] = {
+    Gen.listOfN(numBs,genB(ida))
+  }
+
+  def genABPair(ida: Int, config:CfgCardinality): Gen[(Option[A], Seq[B])] = {
     for (
-      k <- Gen.choose(1, if(config.leftOptional) 3 else 2);
+      k <- Gen.choose(1, if(config.leftOptional) 2 else 1);
+      numBs <- Gen.choose(0,config.rightDist.numMax);
       a <- genA(ida);
-      b <- genB(ida)
+      b <- genBs(ida,numBs)
     ) yield {
       k match {
-        case 1 => (Some(a),Some(b))
-        case 2 => (Some(a),None)
-        case 3 => (None,Some(b))
+        case 1 => (Some(a),b)
+        case 2 => (None,b)
       }
     }
   }
 
-  def genABPair(cfg:CfgCardinality) : Gen[(Option[A], Option[B])] = {
+  def genABPair(cfg:CfgCardinality) : Gen[(Option[A], Seq[B])] = {
     for {
       ida <- Gen.choose(0, idMax);
       pair <- genABPair(ida, cfg)
     } yield pair
+  }
+
+  def genABPairNonempty(cfg:CfgCardinality) = {
+    genABPair(cfg) suchThat (pair => !pair._1.isEmpty || !pair._2.isEmpty )
+  }
+
+  def genABPairNonemptyNoseq(cfg:CfgCardinality) = {
+    genABPairNonempty(cfg) map (xy => (xy._1, xy._2.headOption))
   }
 }
 

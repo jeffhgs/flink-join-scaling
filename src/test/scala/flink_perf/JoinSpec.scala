@@ -12,6 +12,8 @@ import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 import org.scalatest.funsuite.AnyFunSuite
 
+import scala.collection.mutable.ArrayBuffer
+
 class JoinSpec extends AnyFunSuite {
   val seed = Seed(123)
   val numSamples = 100
@@ -19,8 +21,9 @@ class JoinSpec extends AnyFunSuite {
 
   private def calcXY(cfg:CfgCardinality) : List[(Option[A], Option[B])] = {
     val gen = new GenJoinInput(1000000000L, 1000000L, 1000000)
-    val xy: List[(Option[A], Option[B])] = Gen.listOfN(numSamples, gen.genABPair(cfg)).apply(Gen.Parameters.default, seed).get
-    xy
+    val cfgSimple = cfg.copy(rightDist=CfgUniform(1))
+    val gen2 = gen.genABPairNonemptyNoseq(cfgSimple)
+    GenUtil.sampleExactlyN[(Option[A], Option[B])](gen2, seed, numSamples)
   }
 
   def ktFromXY(ab:((Option[A], Option[B]))) = {
