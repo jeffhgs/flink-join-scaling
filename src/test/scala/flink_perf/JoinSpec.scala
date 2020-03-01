@@ -35,7 +35,7 @@ class JoinSpec extends AnyFunSuite {
     }
   }
 
-  registerTest("XY join input gets generated")(new FlinkTestEnv {
+  registerTest("AB join input gets generated")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val xy = sampleAB(cfg)
     assert(xy.length == numSamples)
@@ -48,7 +48,7 @@ class JoinSpec extends AnyFunSuite {
     }
   })
 
-  registerTest("XY join output is expected")(new FlinkTestEnv {
+  registerTest("AB join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val xy = sampleAB(cfg)
     val x : List[A] = xy.flatMap(_._1)
@@ -71,7 +71,7 @@ class JoinSpec extends AnyFunSuite {
     assert(actual.length == numSamples)
   })
 
-  registerTest("XY join monitoring")(new FlinkTestEnv {
+  registerTest("AB join monitoring")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val xy = sampleAB(cfg)
     val x : List[A] = xy.flatMap(_._1)
