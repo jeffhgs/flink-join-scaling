@@ -65,16 +65,12 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield B(idb, ts, ida)
   }
 
-  def genBs(ida: Int,numBs:Int) : Gen[List[B]] = {
-    Gen.listOfN(numBs,genB(ida))
-  }
-
   def genABPair(ida: Int, config:CfgCardinality): Gen[(Option[A], Seq[B])] = {
     for (
       k <- Gen.choose(1, if(config.leftOptional) 2 else 1);
       numBs <- Gen.choose(0,config.rightDist.numMax);
       a <- genA(ida);
-      b <- genBs(ida,numBs)
+      b <- Gen.listOfN(numBs, genB(ida))
     ) yield {
       k match {
         case 1 => (Some(a),b)
