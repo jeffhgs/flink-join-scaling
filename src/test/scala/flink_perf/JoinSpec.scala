@@ -19,7 +19,7 @@ class JoinSpec extends AnyFunSuite {
   val numSamples = 100
   val dtMax = 10000L
 
-  private def calcXY(cfg:CfgCardinality) : List[(Option[A], Option[B])] = {
+  private def sampleXY(cfg:CfgCardinality) : List[(Option[A], Option[B])] = {
     val gen = new GenJoinInput(1000000000L, 1000000L, 1000000)
     val cfgSimple = cfg.copy(rightDist=CfgUniform(1))
     val gen2 = gen.genABPairNonemptyNoseq(cfgSimple)
@@ -37,7 +37,7 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("can generate join input")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
-    val xy = calcXY(cfg)
+    val xy = sampleXY(cfg)
     assert(xy.length == numSamples)
     for(z <- xy) {
       z match {
@@ -50,7 +50,7 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
-    val xy = calcXY(cfg)
+    val xy = sampleXY(cfg)
     val x : List[A] = xy.flatMap(_._1)
     val y : List[B] = xy.flatMap(_._2)
     val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
@@ -73,7 +73,7 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("join monitoring")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
-    val xy = calcXY(cfg)
+    val xy = sampleXY(cfg)
     val x : List[A] = xy.flatMap(_._1)
     val y : List[B] = xy.flatMap(_._2)
     val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
