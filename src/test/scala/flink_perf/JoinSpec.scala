@@ -1,6 +1,6 @@
 package flink_perf
 
-import flink_perf.joins.cgfInner
+import flink_perf.joins.cgfFullOuter
 import flink_perf.sinks.TestSink1
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
 import org.apache.flink.streaming.api.scala._
@@ -69,7 +69,7 @@ class JoinSpec extends AnyFunSuite {
     val y : List[B] = xy.flatMap(_._2)
     val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
     val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
-    val joinxy = joins.JoinInner[A,B](dsx, dsy,
+    val joinxy = joins.JoinFullOuter[A,B](dsx, dsy,
       a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts
@@ -93,7 +93,7 @@ class JoinSpec extends AnyFunSuite {
     val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
     val dsx2 = dsx.transform("dsx",StreamMonitor[A](1000L))
     val dsy2 = dsy.transform("dsy",StreamMonitor[B](1000L))
-    val joinxy = joins.JoinInner[A,B](dsx, dsy,
+    val joinxy = joins.JoinFullOuter[A,B](dsx, dsy,
       a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts

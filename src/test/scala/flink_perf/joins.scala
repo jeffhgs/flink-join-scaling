@@ -10,8 +10,7 @@ import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
 import org.apache.flink.util.Collector
 
 object joins {
-//  val foo = new java.util.ArrayList().asScala
-  def cgfInner[X,Y] = new CoGroupFunction[X, Y, (Option[X], Option[Y])]() {
+  def cgfFullOuter[X,Y] = new CoGroupFunction[X, Y, (Option[X], Option[Y])]() {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(Option[X], Option[Y])]): Unit = {
       (xs.iterator().hasNext, ys.iterator().hasNext) match {
         case (false, true) =>
@@ -32,17 +31,17 @@ object joins {
       }
     }
   }
-  def JoinInner[X,Y](dsx2: DataStream[X], dsy2: DataStream[Y],
-                     keyFromX:X=>String, keyFromY:Y=>String,
-                     idFromX:X=>String, idFromY:Y=>String,
-                     tsFromX:X=>Long, tsFromY:Y=>Long)(implicit _tiX:TypeInformation[X], _tiY:TypeInformation[Y]) = {
+  def JoinFullOuter[X,Y](dsx2: DataStream[X], dsy2: DataStream[Y],
+                         keyFromX:X=>String, keyFromY:Y=>String,
+                         idFromX:X=>String, idFromY:Y=>String,
+                         tsFromX:X=>Long, tsFromY:Y=>Long)(implicit _tiX:TypeInformation[X], _tiY:TypeInformation[Y]) = {
     val _tiXY = createTypeInformation[(Option[X], Option[Y])]
     val joinxy = dsx2.keyBy(keyFromX).coGroup(dsy2.keyBy(keyFromY))
       .where(keyFromX)
       .equalTo(keyFromY)
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
-      .apply(cgfInner[X,Y])
+      .apply(cgfFullOuter[X,Y])
     joinxy
   }
 }
