@@ -40,7 +40,7 @@ class JoinSpec extends AnyFunSuite {
     GenUtil.sampleExactlyN[(A, Seq[(B, Seq[C])])](gen2, seed, numSamples)
   }
 
-  def ktFromXY(ab:((Option[A], Option[B]))) = {
+  def ktFromOAOB(ab:((Option[A], Option[B]))) = {
     ab match {
       case (Some(a),Some(b)) => (a.id.toString,a.ts + b.ts)
       case (Some(a),None) => (a.id.toString,a.ts)
@@ -51,9 +51,9 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("AB join input gets generated")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
-    val xy = sampleAB(cfg)
-    assert(xy.length == numSamples)
-    for(z <- xy) {
+    val abs = sampleAB(cfg)
+    assert(abs.length == numSamples)
+    for(z <- abs) {
       z match {
         case (Some(x),Some(y)) =>
           assert(x.id == y.ida)
@@ -64,12 +64,12 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("AB outer join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
-    val xy = sampleAB(cfg)
-    val x : List[A] = xy.flatMap(_._1)
-    val y : List[B] = xy.flatMap(_._2)
-    val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
-    val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
-    val joinxy = joins.JoinFullOuter[A,B](dsx, dsy,
+    val abs = sampleAB(cfg)
+    val x : List[A] = abs.flatMap(_._1)
+    val y : List[B] = abs.flatMap(_._2)
+    val dsa = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinxy = joins.JoinFullOuter[A,B](dsa, dsb,
       a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts
@@ -77,7 +77,7 @@ class JoinSpec extends AnyFunSuite {
 
     val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy)
     env.execute()
-    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromXY).get()
+    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromOAOB).get()
 //    GenJoinInput.print(xy, "E")
 //    GenJoinInput.print(actual, "A")
     assert(sink.asSeq().length >= numSamples)
@@ -86,22 +86,22 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("AB outer join monitoring")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
-    val xy = sampleAB(cfg)
-    val x : List[A] = xy.flatMap(_._1)
-    val y : List[B] = xy.flatMap(_._2)
-    val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
-    val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
-    val dsx2 = dsx.transform("dsx",StreamMonitor[A](1000L))
-    val dsy2 = dsy.transform("dsy",StreamMonitor[B](1000L))
-    val joinxy = joins.JoinFullOuter[A,B](dsx, dsy,
+    val abs = sampleAB(cfg)
+    val x : List[A] = abs.flatMap(_._1)
+    val y : List[B] = abs.flatMap(_._2)
+    val dsa = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsa2 = dsa.transform("dsa",StreamMonitor[A](1000L))
+    val dsb2 = dsb.transform("dsb",StreamMonitor[B](1000L))
+    val joinxy = joins.JoinFullOuter[A,B](dsa, dsb,
       a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts
     )
-    val joinxy2 = joinxy.transform("joinxy", StreamMonitor(1000L))
-    val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy2)
+    val joinab2 = joinxy.transform("joinab", StreamMonitor(1000L))
+    val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinab2)
     env.execute()
-    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromXY).get()
+    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromOAOB).get()
     assert(sink.asSeq().length >= numSamples)
     assert(actual.length == numSamples)
   })
@@ -139,7 +139,7 @@ class JoinSpec extends AnyFunSuite {
       (None, Some(B(914090,999988501, 4059))),
       (Some(A(4059, 999440747)), Some(B(914090,999988501, 4059)))
     )
-    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](xy, ktFromXY).get()
+    val actual = new OmnicientDeduplicator[(Option[A], Option[B])](xy, ktFromOAOB).get()
     assert(actual.length == 1)
   }
 }
