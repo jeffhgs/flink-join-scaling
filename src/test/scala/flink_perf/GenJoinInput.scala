@@ -90,10 +90,10 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
 
   def genC(idb: Int) = {
     for{
-      idb <- Gen.choose(0, idMax);
+      id <- Gen.choose(0, idMax);
       dt <- Gen.choose(0, dtMax);
       ts = tMax - dt
-    } yield C(idb, ts, idb)
+    } yield C(id, ts, idb)
   }
 
   def genBC(ida: Int, rightDist:CfgUniform): Gen[(B, Seq[C])] = {
