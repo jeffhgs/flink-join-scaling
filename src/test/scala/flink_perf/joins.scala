@@ -11,7 +11,7 @@ import org.apache.flink.util.Collector
 
 object joins {
 //  val foo = new java.util.ArrayList().asScala
-  def cgf1[X,Y] = new CoGroupFunction[X, Y, (Option[X], Option[Y])]() {
+  def cgfInner[X,Y] = new CoGroupFunction[X, Y, (Option[X], Option[Y])]() {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(Option[X], Option[Y])]): Unit = {
       (xs.iterator().hasNext, ys.iterator().hasNext) match {
         case (false, true) =>
@@ -42,7 +42,7 @@ object joins {
       .equalTo(keyFromY)
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
-      .apply(cgf1[X,Y])
+      .apply(cgfInner[X,Y])
     joinxy
   }
 }
