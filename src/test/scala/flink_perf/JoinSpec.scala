@@ -49,6 +49,14 @@ class JoinSpec extends AnyFunSuite {
     }
   }
 
+  def ktFromAOB(ab:(A, Option[B])) = {
+    ab match {
+      case (a,Some(b)) => (a.id.toString,a.ts + b.ts)
+      case (a,None) => (a.id.toString,a.ts)
+      case _ => throw new RuntimeException("Internal error")
+    }
+  }
+
   registerTest("AB join input gets generated")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val abs = sampleAB(cfg)
@@ -104,6 +112,27 @@ class JoinSpec extends AnyFunSuite {
     val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromOAOB).get()
     assert(sink.asSeq().length >= numSamples)
     assert(actual.length == numSamples)
+  })
+
+  registerTest("AB left outer join output is expected")(new FlinkTestEnv {
+    val cfg = CfgCardinality(true)
+    val xy = sampleAB(cfg)
+    val x : List[A] = xy.flatMap(_._1)
+    val y : List[B] = xy.flatMap(_._2)
+    val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinxy = joins.JoinLeftOuter[A,B](dsx, dsy,
+      a => a.id.toString, b => b.ida.toString,
+      a => a.id.toString, b => b.id.toString,
+      a => a.ts, b => b.ts
+    )
+
+    val sink = new TestSink1[(A, Option[B])]().withSource(joinxy)
+    env.execute()
+    val actual = new OmnicientDeduplicator[(A, Option[B])](sink.asSeq(), ktFromAOB).get()
+    val numExpected = xy.count(xy => xy._1.isDefined)
+    assert(sink.asSeq().length >= numExpected)
+    assert(actual.length == numExpected)
   })
 
   registerTest("BC join input gets generated")(new FlinkTestEnv {
