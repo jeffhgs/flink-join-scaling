@@ -62,7 +62,7 @@ class JoinSpec extends AnyFunSuite {
     }
   })
 
-  registerTest("AB join output is expected")(new FlinkTestEnv {
+  registerTest("AB outer join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val xy = sampleAB(cfg)
     val x : List[A] = xy.flatMap(_._1)
@@ -84,7 +84,7 @@ class JoinSpec extends AnyFunSuite {
     assert(actual.length == numSamples)
   })
 
-  registerTest("AB join monitoring")(new FlinkTestEnv {
+  registerTest("AB outer join monitoring")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val xy = sampleAB(cfg)
     val x : List[A] = xy.flatMap(_._1)
