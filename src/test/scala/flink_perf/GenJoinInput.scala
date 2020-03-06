@@ -88,6 +88,23 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
     } yield B(idb, ts, ida)
   }
 
+  def genC(idb: Int) = {
+    for{
+      idb <- Gen.choose(0, idMax);
+      dt <- Gen.choose(0, dtMax);
+      ts = tMax - dt
+    } yield C(idb, ts, idb)
+  }
+
+  def genBC(ida: Int, rightDist:CfgUniform): Gen[(B, Seq[C])] = {
+    for (
+      b <- genB(ida);
+      cs <- genEntity(b.id,rightDist,genC)
+    ) yield {
+      (b,cs)
+    }
+  }
+
   def genABPair(cfg:CfgCardinality) : Gen[(Option[A], Seq[B])] = {
     for {
       ida <- Gen.choose(0, idMax);
@@ -101,6 +118,14 @@ class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
 
   def genABPairNonemptyNoseq(cfg:CfgCardinality) = {
     genABPairNonempty(cfg) map (xy => (xy._1, xy._2.headOption))
+  }
+
+  def genABC(cfg:CfgCardinality, cfgC:CfgUniform) : Gen[(A, Seq[(B, Seq[C])])] = {
+    for {
+      ida <- Gen.choose(0, idMax);
+      a <- genA(ida);
+      bcs <- genEntity(ida, cfg.rightDist, { (ida:Int) => genBC(ida, cfgC)})
+    } yield (a, bcs)
   }
 }
 

@@ -26,6 +26,21 @@ class JoinSpec extends AnyFunSuite {
     GenUtil.sampleExactlyN[(Option[A], Option[B])](gen2, seed, numSamples)
   }
 
+  private def sampleBC(cfg:CfgCardinality) : List[(B, Seq[C])] = {
+    val gen = new GenJoinInput(1000000000L, 1000000L, 1000000)
+    val ida = 0
+    val cfgBC = CfgUniform(2)
+    val gen2 = gen.genBC(ida, cfg.rightDist)
+    GenUtil.sampleExactlyN[(B, Seq[C])](gen2, seed, numSamples)
+  }
+
+  private def sampleABC(cfg:CfgCardinality) : List[(A, Seq[(B, Seq[C])])] = {
+    val gen = new GenJoinInput(1000000000L, 1000000L, 1000000)
+    val cfgSimple = cfg.copy(rightDist=CfgUniform(1))
+    val gen2 = gen.genABC(cfgSimple, CfgUniform(2))
+    GenUtil.sampleExactlyN[(A, Seq[(B, Seq[C])])](gen2, seed, numSamples)
+  }
+
   def ktFromXY(ab:((Option[A], Option[B]))) = {
     ab match {
       case (Some(a),Some(b)) => (a.id.toString,a.ts + b.ts)
@@ -92,6 +107,33 @@ class JoinSpec extends AnyFunSuite {
     val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromXY).get()
     assert(sink.asSeq().length >= numSamples)
     assert(actual.length == numSamples)
+  })
+
+  registerTest("BC join input gets generated")(new FlinkTestEnv {
+    val cfg = CfgCardinality(false)
+    val bcs = sampleBC(cfg)
+    assert(bcs.length == numSamples)
+    for ((b, cs) <- bcs){
+      for(c <- cs) {
+        assert(c.idb == b.id)
+      }
+    }
+  })
+
+  registerTest("ABC join input gets generated")(new FlinkTestEnv {
+    val cfg = CfgCardinality(false)
+    val abc = sampleABC(cfg)
+    assert(abc.length == numSamples)
+    for((a,bcs) <- abc) {
+      println(s"about to test ${(a,bcs)}")
+      for {(b, cs) <- bcs;
+           _ = assert(b.ida == a.id)
+      }{
+        for(c <- cs) {
+          assert(c.idb == b.id)
+        }
+      }
+    }
   })
 
   test("Deduplicator catches duplicate") {
