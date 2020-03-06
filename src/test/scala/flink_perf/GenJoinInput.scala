@@ -31,6 +31,7 @@ case class CfgCardinality(leftOptional:Boolean, rightDist:CfgUniform=CfgUniform(
 
 case class A(id: Int, ts:Long)
 case class B(id: Int, ts:Long, ida:Int)
+case class C(id: Int, ts:Long, idb:Int)
 
 class ATimestampAsssigner(maxDt:Time) extends BoundedOutOfOrdernessTimestampExtractor[A](maxDt) {
   override def extractTimestamp(a: A): Long = {
