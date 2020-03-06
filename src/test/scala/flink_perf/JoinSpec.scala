@@ -26,9 +26,8 @@ class JoinSpec extends AnyFunSuite {
     GenUtil.sampleExactlyN[(Option[A], Option[B])](gen2, seed, numSamples)
   }
 
-  private def sampleBC(cfg:CfgCardinality) : List[(B, Seq[C])] = {
+  private def sampleBC(ida:Int, cfg:CfgCardinality) : List[(B, Seq[C])] = {
     val gen = new GenJoinInput(1000000000L, 1000000L, 1000000)
-    val ida = 0
     val cfgBC = CfgUniform(2)
     val gen2 = gen.genBC(ida, cfg.rightDist)
     GenUtil.sampleExactlyN[(B, Seq[C])](gen2, seed, numSamples)
@@ -111,7 +110,8 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("BC join input gets generated")(new FlinkTestEnv {
     val cfg = CfgCardinality(false)
-    val bcs = sampleBC(cfg)
+    val ida = 0
+    val bcs = sampleBC(ida,cfg)
     assert(bcs.length == numSamples)
     for ((b, cs) <- bcs){
       for(c <- cs) {
