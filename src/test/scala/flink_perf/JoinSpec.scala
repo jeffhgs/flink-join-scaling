@@ -80,8 +80,8 @@ class JoinSpec extends AnyFunSuite {
     val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy)
     env.execute()
     val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromXY).get()
-    GenJoinInput.print(xy, "E")
-    GenJoinInput.print(actual, "A")
+//    GenJoinInput.print(xy, "E")
+//    GenJoinInput.print(actual, "A")
     assert(sink.asSeq().length >= numSamples)
     assert(actual.length == numSamples)
   })
@@ -125,7 +125,7 @@ class JoinSpec extends AnyFunSuite {
     val abc = sampleABC(cfg)
     assert(abc.length == numSamples)
     for((a,bcs) <- abc) {
-      println(s"about to test ${(a,bcs)}")
+//      println(s"about to test ${(a,bcs)}")
       for {(b, cs) <- bcs;
            _ = assert(b.ida == a.id)
       }{

@@ -28,17 +28,17 @@ case class StreamMonitor[T](idleTimeout: Long)
     sourceCtx
   }
   override def processElement(element: StreamRecord[T]): Unit = {
-    println(s"${this.getOperatorName}: processing ${element.getValue}")
+//    println(s"${this.getOperatorName}: processing ${element.getValue}")
     sourceContext.collect(element.getValue)
   }
 
   override def processWatermark1(mark: Watermark): Unit = {
-    println(s"${this.getOperatorName} watermark in")
+//    println(s"${this.getOperatorName} watermark in")
     super.processWatermark1(mark)
   }
 
   override def processWatermark(mark: Watermark): Unit = {
-    println(s"${this.getOperatorName} watermark out t=${mark.getTimestamp}")
+//    println(s"${this.getOperatorName} watermark out t=${mark.getTimestamp}")
     super.processWatermark(mark)
   }
 }
