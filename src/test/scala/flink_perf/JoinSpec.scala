@@ -69,12 +69,11 @@ class JoinSpec extends AnyFunSuite {
     val y : List[B] = xy.flatMap(_._2)
     val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
     val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
-    val joinxy = dsx.keyBy(_.id).coGroup(dsy.keyBy(_.ida))
-      .where(_.id)
-      .equalTo(_.ida)
-      .window(GlobalWindows.create())
-      .trigger(CountTrigger.of(1))
-      .apply(cgf1)
+    val joinxy = joins.JoinInner[A,B](dsx, dsy,
+      a => a.id.toString, b => b.ida.toString,
+      a => a.id.toString, b => b.id.toString,
+      a => a.ts, b => b.ts
+    )
 
     val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy)
     env.execute()
@@ -94,12 +93,11 @@ class JoinSpec extends AnyFunSuite {
     val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
     val dsx2 = dsx.transform("dsx",StreamMonitor[A](1000L))
     val dsy2 = dsy.transform("dsy",StreamMonitor[B](1000L))
-    val joinxy = dsx2.keyBy(_.id).coGroup(dsy2.keyBy(_.ida))
-      .where(_.id)
-      .equalTo(_.ida)
-      .window(GlobalWindows.create())
-      .trigger(CountTrigger.of(1))
-      .apply(cgf1)
+    val joinxy = joins.JoinInner[A,B](dsx, dsy,
+      a => a.id.toString, b => b.ida.toString,
+      a => a.id.toString, b => b.id.toString,
+      a => a.ts, b => b.ts
+    )
     val joinxy2 = joinxy.transform("joinxy", StreamMonitor(1000L))
     val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy2)
     env.execute()

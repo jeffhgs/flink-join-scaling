@@ -11,8 +11,8 @@ import org.apache.flink.util.Collector
 
 object joins {
 //  val foo = new java.util.ArrayList().asScala
-  def cgf1 = new CoGroupFunction[A, B, (Option[A], Option[B])]() {
-    override def coGroup(xs: java.lang.Iterable[A], ys: java.lang.Iterable[B], out: Collector[(Option[A], Option[B])]): Unit = {
+  def cgf1[X,Y] = new CoGroupFunction[X, Y, (Option[X], Option[Y])]() {
+    override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(Option[X], Option[Y])]): Unit = {
       (xs.iterator().hasNext, ys.iterator().hasNext) match {
         case (false, true) =>
           for(y <- ys.iterator().toIterator)
@@ -31,5 +31,18 @@ object joins {
         // do nothing
       }
     }
+  }
+  def JoinInner[X,Y](dsx2: DataStream[X], dsy2: DataStream[Y],
+                     keyFromX:X=>String, keyFromY:Y=>String,
+                     idFromX:X=>String, idFromY:Y=>String,
+                     tsFromX:X=>Long, tsFromY:Y=>Long)(implicit _tiX:TypeInformation[X], _tiY:TypeInformation[Y]) = {
+    val _tiXY = createTypeInformation[(Option[X], Option[Y])]
+    val joinxy = dsx2.keyBy(keyFromX).coGroup(dsy2.keyBy(keyFromY))
+      .where(keyFromX)
+      .equalTo(keyFromY)
+      .window(GlobalWindows.create())
+      .trigger(CountTrigger.of(1))
+      .apply(cgf1[X,Y])
+    joinxy
   }
 }
