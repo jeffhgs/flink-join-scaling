@@ -73,17 +73,17 @@ class JoinSpec extends AnyFunSuite {
   registerTest("AB outer join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val abs = sampleAB(cfg)
-    val x : List[A] = abs.flatMap(_._1)
-    val y : List[B] = abs.flatMap(_._2)
-    val dsa = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
-    val dsb = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
-    val joinxy = joins.JoinFullOuter[A,B](dsa, dsb,
+    val a : List[A] = abs.flatMap(_._1)
+    val b : List[B] = abs.flatMap(_._2)
+    val dsa = env.fromCollection(a).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(b).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinab = joins.JoinFullOuter[A,B](dsa, dsb,
       a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts
     )
 
-    val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinxy)
+    val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinab)
     env.execute()
     val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromOAOB).get()
 //    GenJoinInput.print(xy, "E")
@@ -95,18 +95,18 @@ class JoinSpec extends AnyFunSuite {
   registerTest("AB outer join monitoring")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val abs = sampleAB(cfg)
-    val x : List[A] = abs.flatMap(_._1)
-    val y : List[B] = abs.flatMap(_._2)
-    val dsa = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
-    val dsb = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val a : List[A] = abs.flatMap(_._1)
+    val b : List[B] = abs.flatMap(_._2)
+    val dsa = env.fromCollection(a).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(b).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
     val dsa2 = dsa.transform("dsa",StreamMonitor[A](1000L))
     val dsb2 = dsb.transform("dsb",StreamMonitor[B](1000L))
-    val joinxy = joins.JoinFullOuter[A,B](dsa, dsb,
+    val joinab = joins.JoinFullOuter[A,B](dsa, dsb,
       a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts
     )
-    val joinab2 = joinxy.transform("joinab", StreamMonitor(1000L))
+    val joinab2 = joinab.transform("joinab", StreamMonitor(1000L))
     val sink = new TestSink1[(Option[A], Option[B])]().withSource(joinab2)
     env.execute()
     val actual = new OmnicientDeduplicator[(Option[A], Option[B])](sink.asSeq(), ktFromOAOB).get()
@@ -116,21 +116,20 @@ class JoinSpec extends AnyFunSuite {
 
   registerTest("AB left outer join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
-    val xy = sampleAB(cfg)
-    val x : List[A] = xy.flatMap(_._1)
-    val y : List[B] = xy.flatMap(_._2)
-    val dsx = env.fromCollection(x).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
-    val dsy = env.fromCollection(y).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
-    val joinxy = joins.JoinLeftOuter[A,B](dsx, dsy,
+    val ab = sampleAB(cfg)
+    val a : List[A] = ab.flatMap(_._1)
+    val b : List[B] = ab.flatMap(_._2)
+    val dsa = env.fromCollection(a).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(b).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinab = joins.JoinLeftOuter[A,B](dsa, dsb,
       a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts
     )
-
-    val sink = new TestSink1[(A, Option[B])]().withSource(joinxy)
+    val sink = new TestSink1[(A, Option[B])]().withSource(joinab)
     env.execute()
     val actual = new OmnicientDeduplicator[(A, Option[B])](sink.asSeq(), ktFromAOB).get()
-    val numExpected = xy.count(xy => xy._1.isDefined)
+    val numExpected = ab.count(xy => xy._1.isDefined)
     assert(sink.asSeq().length >= numExpected)
     assert(actual.length == numExpected)
   })
