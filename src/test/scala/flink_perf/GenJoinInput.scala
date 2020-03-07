@@ -45,6 +45,12 @@ class BTimestampAsssigner(maxDt:Time) extends BoundedOutOfOrdernessTimestampExtr
   }
 }
 
+class CTimestampAsssigner(maxDt:Time) extends BoundedOutOfOrdernessTimestampExtractor[C](maxDt) {
+  override def extractTimestamp(c: C): Long = {
+    c.ts
+  }
+}
+
 
 class GenJoinInput(tMax: Long, dtMax: Long, idMax:Int) {
   import org.scalacheck._

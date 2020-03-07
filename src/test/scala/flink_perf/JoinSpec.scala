@@ -40,6 +40,47 @@ class JoinSpec extends AnyFunSuite {
     GenUtil.sampleExactlyN[(A, Seq[(B, Seq[C])])](gen2, seed, numSamples)
   }
 
+  private def dissociateABC(abcs:List[(A, Seq[(B, Seq[C])])]) = {
+    val as = for{
+      (a,bcs) <- abcs
+    } yield a
+    val bs = for{
+      (a,bcs) <- abcs;
+      (b, cs) <- bcs
+    } yield b
+    val cs = for{
+      (a,bcs) <- abcs;
+      (b, cs) <- bcs;
+      c <- cs
+    } yield c
+    (as,bs,cs)
+  }
+
+  private def countAB(abcs:List[(A, Seq[(B, Seq[C])])]) = {
+    val x = for{
+      (a,bcs) <- abcs
+    } yield (
+      if(bcs.isEmpty)
+        1
+      else
+        bcs.length
+      )
+    x.sum
+  }
+
+  private def countBC(abcs:List[(A, Seq[(B, Seq[C])])]) = {
+    val x = for{
+      (a,bcs) <- abcs;
+      (b,cs) <- bcs
+    } yield (
+      if(cs.isEmpty)
+        1
+      else
+        cs.length
+      )
+    x.sum
+  }
+
   def ktFromOAOB(ab:((Option[A], Option[B]))) = {
     ab match {
       case (Some(a),Some(b)) => (a.id.toString,a.ts + b.ts)
@@ -53,6 +94,14 @@ class JoinSpec extends AnyFunSuite {
     ab match {
       case (a,Some(b)) => (a.id.toString,a.ts + b.ts)
       case (a,None) => (a.id.toString,a.ts)
+      case _ => throw new RuntimeException("Internal error")
+    }
+  }
+
+  def ktFromBOC(bc:(B, Option[C])) = {
+    bc match {
+      case (b,Some(c)) => (b.id.toString,b.ts + c.ts)
+      case (b,None) => (b.id.toString,b.ts)
       case _ => throw new RuntimeException("Internal error")
     }
   }
@@ -130,6 +179,45 @@ class JoinSpec extends AnyFunSuite {
     env.execute()
     val actual = new OmnicientDeduplicator[(A, Option[B])](sink.asSeq(), ktFromAOB).get()
     val numExpected = ab.count(xy => xy._1.isDefined)
+    assert(sink.asSeq().length >= numExpected)
+    assert(actual.length == numExpected)
+  })
+
+  registerTest("ABC part AB left outer join output is expected")(new FlinkTestEnv {
+    val cfg = CfgCardinality(true)
+    val abc = sampleABC(cfg)
+    val (a,b,c) = dissociateABC(abc)
+    val dsa = env.fromCollection(a).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(b).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinab = joins.JoinLeftOuter[A,B](dsa, dsb,
+      a => a.id.toString, b => b.ida.toString,
+      a => a.id.toString, b => b.id.toString,
+      a => a.ts, b => b.ts
+    )
+    val sink = new TestSink1[(A, Option[B])]().withSource(joinab)
+    env.execute()
+    val actual = new OmnicientDeduplicator[(A, Option[B])](sink.asSeq(), ktFromAOB).get()
+    val numExpected = countAB(abc)
+    assert(sink.asSeq().length >= numExpected)
+    assert(actual.length == numExpected)
+  })
+
+  registerTest("ABC part BC left outer join output is expected")(new FlinkTestEnv {
+    val cfg = CfgCardinality(true)
+    val abc = sampleABC(cfg)
+    val (a,b,c) = dissociateABC(abc)
+    val dsa = env.fromCollection(a).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(b).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsc = env.fromCollection(c).assignTimestampsAndWatermarks(new CTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinab = joins.JoinLeftOuter[B,C](dsb, dsc,
+      b => b.id.toString, c => c.idb.toString,
+      b => b.id.toString, c => c.id.toString,
+      b => b.ts, c => c.ts
+    )
+    val sink = new TestSink1[(B, Option[C])]().withSource(joinab)
+    env.execute()
+    val actual = new OmnicientDeduplicator[(B, Option[C])](sink.asSeq(), ktFromBOC).get()
+    val numExpected = countBC(abc)
     assert(sink.asSeq().length >= numExpected)
     assert(actual.length == numExpected)
   })
