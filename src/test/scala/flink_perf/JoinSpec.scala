@@ -56,6 +56,20 @@ class JoinSpec extends AnyFunSuite {
     (as,bs,cs)
   }
 
+  private def dissociateBC(abcs:List[(A, Seq[(B, Seq[C])])]) : List[(B, Option[C])] = {
+    for{
+      (a,bcs) <- abcs;
+      (b,cs) <- bcs;
+      r <- (
+        if (cs.isEmpty)
+          List((b, None))
+        else
+          for (c <- cs) yield
+            (b, Some(c))
+        )
+    } yield r
+  }
+
   private def countAB(abcs:List[(A, Seq[(B, Seq[C])])]) = {
     val x = for{
       (a,bcs) <- abcs
@@ -217,7 +231,12 @@ class JoinSpec extends AnyFunSuite {
     val sink = new TestSink1[(B, Option[C])]().withSource(joinab)
     env.execute()
     val actual = new OmnicientDeduplicator[(B, Option[C])](sink.asSeq(), ktFromBOC).get()
+    val bcExpected = dissociateBC(abc)
+    GenJoinInput.printC(c, "C")
+    GenJoinInput.printBC(bcExpected, "E")
+    GenJoinInput.printBC(actual, "A")
     val numExpected = countBC(abc)
+
     assert(sink.asSeq().length >= numExpected)
     assert(actual.length == numExpected)
   })
