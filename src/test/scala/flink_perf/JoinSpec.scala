@@ -114,7 +114,7 @@ class JoinSpec extends AnyFunSuite {
 
   def ktFromBOC(bc:(B, Option[C])) = {
     bc match {
-      case (b,Some(c)) => (b.id.toString,b.ts + c.ts)
+      case (b,Some(c)) => (b.id.toString+"|"+c.id.toString,b.ts + c.ts)
       case (b,None) => (b.id.toString,b.ts)
       case _ => throw new RuntimeException("Internal error")
     }
