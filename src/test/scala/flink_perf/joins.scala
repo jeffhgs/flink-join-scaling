@@ -1,6 +1,6 @@
 package flink_perf
 
-import collection.JavaConversions._
+import collection.JavaConverters._
 import org.apache.flink.api.common.functions.CoGroupFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala._
@@ -16,15 +16,15 @@ object joins {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(Option[X], Option[Y])]): Unit = {
       (xs.iterator().hasNext, ys.iterator().hasNext) match {
         case (false, true) =>
-          for(y <- ys.iterator().toIterator)
+          for(y <- ys.asScala.iterator)
             out.collect((None,Some(y)))
         case (true, false) =>
-          for(x <- xs.iterator())
+          for(x <- xs.asScala.iterator)
             out.collect((Some(x),None))
         case (true, true) =>
           // TODO: check for degenerate join?
-          for(x <- xs.iterator()) {
-            for(y <- ys.iterator()) {
+          for(x <- xs.asScala.iterator) {
+            for(y <- ys.asScala.iterator) {
               out.collect((Some(x),Some(y)))
             }
           }
@@ -48,15 +48,15 @@ object joins {
   }
   def cgfLeftOuter[X,Y] = new CoGroupFunction[X, Y, (X, Option[Y])]() {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(X, Option[Y])]): Unit = {
-      (xs.iterator().hasNext, ys.iterator().hasNext) match {
+      (xs.asScala.iterator.hasNext, ys.asScala.iterator.hasNext) match {
         case (false, true) =>
         case (true, false) =>
-          for(x <- xs.iterator())
+          for(x <- xs.asScala.iterator)
             out.collect((x,None))
         case (true, true) =>
           // TODO: check for degenerate join?
-          for(x <- xs.iterator()) {
-            for(y <- ys.iterator()) {
+          for(x <- xs.asScala.iterator) {
+            for(y <- ys.asScala.iterator) {
               out.collect((x,Some(y)))
             }
           }
@@ -81,13 +81,13 @@ object joins {
 
   def dedupeLeftOuterSeq[X,Y](keyFromX: X => String, keyFromY: Y => String, idFromX: X => String, idFromY: Y => String, tsFromX: X => Long, tsFromY: Y => Long, xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y]) = {
     val mp = new mutable.HashMap[String, (Option[X], mutable.HashMap[String, Y])]()
-    for (x <- xs.iterator) {
+    for (x <- xs.asScala.iterator) {
       val idx = idFromX(x)
       val vPrev: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(idx, (Some(x), new mutable.HashMap[String, Y]()))
       if (vPrev._1.isDefined && (tsFromX(x) > tsFromX(vPrev._1.get)))
         mp.update(idx, (Some(x), vPrev._2))
     }
-    for (y <- ys.iterator) {
+    for (y <- ys.asScala.iterator) {
       val idx = keyFromY(y)
       val idy = idFromY(y)
       val v: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(idx, (None, new mutable.HashMap[String, Y]()))
