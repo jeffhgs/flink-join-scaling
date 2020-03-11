@@ -76,4 +76,25 @@ object joins {
       .apply(cgfLeftOuter[X,Y])
     joinxy
   }
+  def cgfLeftOuterSeq[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
+                           idFromX:X=>String, idFromY:Y=>String,
+                           tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (X, Seq[Y])]() {
+    override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(X, Seq[Y])]): Unit = {
+    }
+  }
+  def JoinLeftOuterSeq[X,Y](dsx2: DataStream[X], dsy2: DataStream[Y],
+                         keyFromX:X=>String, keyFromY:Y=>String,
+                         idFromX:X=>String, idFromY:Y=>String,
+                         tsFromX:X=>Long, tsFromY:Y=>Long)(implicit _tiX:TypeInformation[X], _tiY:TypeInformation[Y]) = {
+    val _tiXY = createTypeInformation[(X, Option[Y])]
+    val joinxy = dsx2.keyBy(keyFromX).coGroup(dsy2.keyBy(keyFromY))
+      .where(keyFromX)
+      .equalTo(keyFromY)
+      .window(GlobalWindows.create())
+      .trigger(CountTrigger.of(1))
+      .apply(cgfLeftOuterSeq[X,Y](keyFromX, keyFromY,
+        idFromX, idFromY,
+        tsFromX, tsFromY))
+    joinxy
+  }
 }
