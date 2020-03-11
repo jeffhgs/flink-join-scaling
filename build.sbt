@@ -1,4 +1,4 @@
-scalaVersion in ThisBuild := "2.11.8"
+scalaVersion in ThisBuild := "2.12.10"
 lazy val flinkVersion = "1.9.0"
 
 val flinkDependencies = Seq(
