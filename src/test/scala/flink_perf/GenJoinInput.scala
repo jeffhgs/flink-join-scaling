@@ -151,6 +151,20 @@ object GenJoinInput {
       ).mkString("\t"))
     }
   }
+  def printAB(bc: Seq[(A, Seq[B])], tagPP: String) = {
+    for {
+      ((a, bs), i) <- bc.sorted(Ordering[(Boolean,Int)].on(
+        (x:(A, Seq[B])) => (!x._2.isEmpty,x._1.id))).zipWithIndex
+    } {
+      println(Seq(
+        tagPP,
+        i,
+        a.id,
+        a.ts,
+        bs.map(b => Seq(b.id,b.ida,b.ts.toString).mkString("|")).headOption.getOrElse("")
+      ).mkString("\t"))
+    }
+  }
   def printBC(bc: Seq[(B, Option[C])], tagPP: String) = {
     for {
       ((b, cs), i) <- bc.sorted(Ordering[(Boolean,Int)].on(
