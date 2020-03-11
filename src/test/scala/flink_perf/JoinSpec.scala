@@ -232,9 +232,9 @@ class JoinSpec extends AnyFunSuite {
     env.execute()
     val actual = new OmnicientDeduplicator[(B, Option[C])](sink.asSeq(), ktFromBOC).get()
     val bcExpected = dissociateBC(abc)
-    GenJoinInput.printC(c, "C")
-    GenJoinInput.printBC(bcExpected, "E")
-    GenJoinInput.printBC(actual, "A")
+//    GenJoinInput.printC(c, "C")
+//    GenJoinInput.printBC(bcExpected, "E")
+//    GenJoinInput.printBC(actual, "A")
     val numExpected = countBC(abc)
 
     assert(sink.asSeq().length >= numExpected)
