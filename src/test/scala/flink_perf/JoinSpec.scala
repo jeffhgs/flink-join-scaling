@@ -211,8 +211,6 @@ class JoinSpec extends AnyFunSuite {
     )
     val sink = new TestSink1[(A, Seq[B])]().withSource(joinab)
     env.execute()
-    // TODO: fix incorrect heuristic!
-    //val actual = new OmnicientDeduplicator[(A, Seq[B])](sink.asSeq(), (asb => (asb._1.id.toString, asb._1.ts + asb._2.map(_.ts).sum))).get()
     val actual = LojTestDeduplicator[A,B](a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts)(sink.asSeq()).get()

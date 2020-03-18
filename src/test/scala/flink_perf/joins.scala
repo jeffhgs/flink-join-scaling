@@ -82,22 +82,22 @@ object joins {
   def dedupeLeftOuterSeq[X,Y](keyFromX: X => String, keyFromY: Y => String, idFromX: X => String, idFromY: Y => String, tsFromX: X => Long, tsFromY: Y => Long, xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y]) = {
     val mp = new mutable.HashMap[String, (Option[X], mutable.HashMap[String, Y])]()
     for (x <- xs.asScala.iterator) {
-      val idx = keyFromX(x)
-      val vPrev: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(idx, (Some(x), new mutable.HashMap[String, Y]()))
+      val key = keyFromX(x)
+      val vPrev: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(key, (Some(x), new mutable.HashMap[String, Y]()))
       if (vPrev._1.isDefined && (tsFromX(x) > tsFromX(vPrev._1.get)))
-        mp.update(idx, (Some(x), vPrev._2))
+        mp.update(key, (Some(x), vPrev._2))
     }
     for (y <- ys.asScala.iterator) {
-      val idx = keyFromY(y)
+      val key = keyFromY(y)
       val idy = idFromY(y)
-      val v: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(idx, (None, new mutable.HashMap[String, Y]()))
+      val v: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(key, (None, new mutable.HashMap[String, Y]()))
       val yPrev: Y = v._2.getOrElseUpdate(idy, y)
       if (tsFromY(y) > tsFromY(yPrev))
         v._2.update(idy, y)
     }
-    val numX = mp.size
-    val numY = mp.values.map(ab => ab._2.size).sum
-    val vs = mp.values.map(v => (v._1, v._2.values.toSeq))
+//    val numX = mp.size
+//    val numY = mp.values.map(ab => ab._2.size).sum
+//    val vs = mp.values.map(v => (v._1, v._2.values.toSeq))
     mp.values.map(v => (v._1, v._2.values))
   }
 
