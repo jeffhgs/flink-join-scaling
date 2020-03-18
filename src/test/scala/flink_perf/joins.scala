@@ -82,7 +82,7 @@ object joins {
   def dedupeLeftOuterSeq[X,Y](keyFromX: X => String, keyFromY: Y => String, idFromX: X => String, idFromY: Y => String, tsFromX: X => Long, tsFromY: Y => Long, xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y]) = {
     val mp = new mutable.HashMap[String, (Option[X], mutable.HashMap[String, Y])]()
     for (x <- xs.asScala.iterator) {
-      val idx = idFromX(x)
+      val idx = keyFromX(x)
       val vPrev: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(idx, (Some(x), new mutable.HashMap[String, Y]()))
       if (vPrev._1.isDefined && (tsFromX(x) > tsFromX(vPrev._1.get)))
         mp.update(idx, (Some(x), vPrev._2))
