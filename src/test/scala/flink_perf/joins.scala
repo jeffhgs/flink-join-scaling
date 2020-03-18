@@ -129,4 +129,54 @@ object joins {
         tsFromX, tsFromY))
     joinxy
   }
+
+  def dedupeFullOuterSeq[X,Y](keyFromX: X => String, keyFromY: Y => String, idFromX: X => String, idFromY: Y => String, tsFromX: X => Long, tsFromY: Y => Long, xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y]) = {
+    val mp = new mutable.HashMap[String, (mutable.HashMap[String, X], mutable.HashMap[String, Y])]()
+    for (x <- xs.asScala.iterator) {
+      val key = keyFromX(x)
+      val idx = idFromX(x)
+      val v: (mutable.HashMap[String, X], mutable.HashMap[String, Y]) =
+        mp.getOrElseUpdate(key, (new mutable.HashMap[String, X](), new mutable.HashMap[String, Y]()))
+      val xPrev: X = v._1.getOrElseUpdate(idx, x)
+      if (tsFromX(x) > tsFromX(xPrev))
+        v._1.update(idx, x)
+    }
+    for (y <- ys.asScala.iterator) {
+      val key = keyFromY(y)
+      val idy = idFromY(y)
+      val v: (mutable.HashMap[String, X], mutable.HashMap[String, Y]) =
+        mp.getOrElseUpdate(key, (new mutable.HashMap[String, X](), new mutable.HashMap[String, Y]()))
+      val yPrev: Y = v._2.getOrElseUpdate(idy, y)
+      if (tsFromY(y) > tsFromY(yPrev))
+        v._2.update(idy, y)
+    }
+    mp.values.map(v => (v._1.values, v._2.values))
+  }
+
+  def cgfFullOuterSeq[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
+                           idFromX:X=>String, idFromY:Y=>String,
+                           tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (Seq[X], Seq[Y])]() {
+    override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(Seq[X], Seq[Y])]): Unit = {
+      val mp = dedupeFullOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
+      for (v <- mp) {
+        out.collect((v._1.toSeq, v._2.toSeq))
+      }
+    }
+  }
+
+  def JoinFullOuterSeq[X,Y](dsx2: DataStream[X], dsy2: DataStream[Y],
+                            keyFromX:X=>String, keyFromY:Y=>String,
+                            idFromX:X=>String, idFromY:Y=>String,
+                            tsFromX:X=>Long, tsFromY:Y=>Long)(implicit _tiX:TypeInformation[X], _tiY:TypeInformation[Y]) = {
+    val _tiXY = createTypeInformation[(X, Option[Y])]
+    val joinxy = dsx2.keyBy(keyFromX).coGroup(dsy2.keyBy(keyFromY))
+      .where(keyFromX)
+      .equalTo(keyFromY)
+      .window(GlobalWindows.create())
+      .trigger(CountTrigger.of(1))
+      .apply(cgfFullOuterSeq[X,Y](keyFromX, keyFromY,
+        idFromX, idFromY,
+        tsFromX, tsFromY))
+    joinxy
+  }
 }

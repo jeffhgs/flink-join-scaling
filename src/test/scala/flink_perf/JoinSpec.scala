@@ -232,6 +232,42 @@ class JoinSpec extends AnyFunSuite {
     assert(numBActual == numBExpected)
   })
 
+  registerTest("AB outer join seq output is expected")(new FlinkTestEnv {
+    val cfg = CfgCardinality(true)
+    val abs = sampleAB(cfg)
+    val a : List[A] = abs.flatMap(_._1)
+    val b : List[B] = abs.flatMap(_._2)
+    val dsa = env.fromCollection(a).assignTimestampsAndWatermarks(new ATimestampAsssigner(Time.milliseconds(dtMax)))
+    val dsb = env.fromCollection(b).assignTimestampsAndWatermarks(new BTimestampAsssigner(Time.milliseconds(dtMax)))
+    val joinab = joins.JoinFullOuterSeq[A,B](dsa, dsb,
+      a => a.id.toString, b => b.ida.toString,
+      a => a.id.toString, b => b.id.toString,
+      a => a.ts, b => b.ts
+    )
+
+    val sink = new TestSink1[(Seq[A], Seq[B])]().withSource(joinab)
+    env.execute()
+    val actual = FojTestDeduplicator[A,B](a => a.id.toString, b => b.ida.toString,
+      a => a.id.toString, b => b.id.toString,
+      a => a.ts, b => b.ts)(sink.asSeq()).get()
+    GenJoinInput.print(abs, "I")
+    GenJoinInput.printABSeq(actual.toSeq.map(v => (v._1.toSeq, v._2.toSeq)), "O")
+    val numABExpected = abs.length
+    val numABActual = actual.map(ab =>
+      if (ab._2.isEmpty)
+        1
+      else
+        ab._2.size).sum
+    val numBExpected = b.length
+    val numBActual = actual.map(ab =>
+      if (ab._2.isEmpty)
+        0
+      else
+        ab._2.size).sum
+    assert(numABActual == numABExpected)
+    assert(numBActual == numBExpected)
+  })
+
   registerTest("ABC part AB left outer join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val abc = sampleABC(cfg)
