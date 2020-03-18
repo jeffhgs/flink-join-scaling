@@ -168,7 +168,6 @@ object joins {
                             keyFromX:X=>String, keyFromY:Y=>String,
                             idFromX:X=>String, idFromY:Y=>String,
                             tsFromX:X=>Long, tsFromY:Y=>Long)(implicit _tiX:TypeInformation[X], _tiY:TypeInformation[Y]) = {
-    val _tiXY = createTypeInformation[(X, Option[Y])]
     val joinxy = dsx2.keyBy(keyFromX).coGroup(dsy2.keyBy(keyFromY))
       .where(keyFromX)
       .equalTo(keyFromY)
