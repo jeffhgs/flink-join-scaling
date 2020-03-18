@@ -251,7 +251,7 @@ class JoinSpec extends AnyFunSuite {
     assert(actual.length == numExpected)
   })
 
-  registerTest("ABC part BC left outer join output is expected")(new FlinkTestEnv {
+  ignore("ABC part BC left outer join output is expected")(new FlinkTestEnv {
     val cfg = CfgCardinality(true)
     val abc = sampleABC(cfg)
     val (a,b,c) = dissociateABC(abc)
