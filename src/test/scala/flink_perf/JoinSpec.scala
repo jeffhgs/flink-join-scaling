@@ -250,8 +250,8 @@ class JoinSpec extends AnyFunSuite {
     val actual = FojTestDeduplicator[A,B](a => a.id.toString, b => b.ida.toString,
       a => a.id.toString, b => b.id.toString,
       a => a.ts, b => b.ts)(sink.asSeq()).get()
-    GenJoinInput.print(abs, "I")
-    GenJoinInput.printABSeq(actual.toSeq.map(v => (v._1.toSeq, v._2.toSeq)), "O")
+//    GenJoinInput.print(abs, "I")
+//    GenJoinInput.printABSeq(actual.toSeq.map(v => (v._1.toSeq, v._2.toSeq)), "O")
     val numABExpected = abs.length
     val numABActual = actual.map(ab =>
       if (ab._2.isEmpty)
