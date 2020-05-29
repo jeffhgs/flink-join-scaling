@@ -81,30 +81,11 @@ object joins {
     joinxy
   }
 
-  def dedupeLeftOuterSeq[X,Y](keyFromX: X => String, keyFromY: Y => String, idFromX: X => String, idFromY: Y => String, tsFromX: X => Long, tsFromY: Y => Long, xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y]) = {
-    val mp = new mutable.HashMap[String, (Option[X], mutable.HashMap[String, Y])]()
-    for (x <- xs.asScala.iterator) {
-      val key = keyFromX(x)
-      val vPrev: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(key, (Some(x), new mutable.HashMap[String, Y]()))
-      if (vPrev._1.isDefined && (tsFromX(x) > tsFromX(vPrev._1.get)))
-        mp.update(key, (Some(x), vPrev._2))
-    }
-    for (y <- ys.asScala.iterator) {
-      val key = keyFromY(y)
-      val idy = idFromY(y)
-      val v: (Option[X], mutable.HashMap[String, Y]) = mp.getOrElseUpdate(key, (None, new mutable.HashMap[String, Y]()))
-      val yPrev: Y = v._2.getOrElseUpdate(idy, y)
-      if (tsFromY(y) > tsFromY(yPrev))
-        v._2.update(idy, y)
-    }
-    mp.values.map(v => (v._1, v._2.values))
-  }
-
   def cgfLeftOuterSeq[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
                            idFromX:X=>String, idFromY:Y=>String,
                            tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (X, Seq[Y])]() {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(X, Seq[Y])]): Unit = {
-      val mp = dedupeLeftOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
+      val mp = versionDeduplicator.dedupeLeftOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
       for(v <- mp) {
         if (v._1.isDefined)
           out.collect((v._1.get, v._2.toSeq))
@@ -130,34 +111,11 @@ object joins {
     joinxy
   }
 
-  def dedupeFullOuterSeq[X,Y](keyFromX: X => String, keyFromY: Y => String, idFromX: X => String, idFromY: Y => String, tsFromX: X => Long, tsFromY: Y => Long, xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y]) = {
-    val mp = new mutable.HashMap[String, (mutable.HashMap[String, X], mutable.HashMap[String, Y])]()
-    for (x <- xs.asScala.iterator) {
-      val key = keyFromX(x)
-      val idx = idFromX(x)
-      val v: (mutable.HashMap[String, X], mutable.HashMap[String, Y]) =
-        mp.getOrElseUpdate(key, (new mutable.HashMap[String, X](), new mutable.HashMap[String, Y]()))
-      val xPrev: X = v._1.getOrElseUpdate(idx, x)
-      if (tsFromX(x) > tsFromX(xPrev))
-        v._1.update(idx, x)
-    }
-    for (y <- ys.asScala.iterator) {
-      val key = keyFromY(y)
-      val idy = idFromY(y)
-      val v: (mutable.HashMap[String, X], mutable.HashMap[String, Y]) =
-        mp.getOrElseUpdate(key, (new mutable.HashMap[String, X](), new mutable.HashMap[String, Y]()))
-      val yPrev: Y = v._2.getOrElseUpdate(idy, y)
-      if (tsFromY(y) > tsFromY(yPrev))
-        v._2.update(idy, y)
-    }
-    mp.values.map(v => (v._1.values, v._2.values))
-  }
-
   def cgfFullOuterSeq[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
                            idFromX:X=>String, idFromY:Y=>String,
                            tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (Seq[X], Seq[Y])]() {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(Seq[X], Seq[Y])]): Unit = {
-      val mp = dedupeFullOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
+      val mp = versionDeduplicator.dedupeFullOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
       for (v <- mp) {
         out.collect((v._1.toSeq, v._2.toSeq))
       }
