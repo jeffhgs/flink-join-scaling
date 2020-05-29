@@ -1,6 +1,5 @@
 package flink_perf
 
-import collection.JavaConverters._
 import org.apache.flink.api.common.functions.CoGroupFunction
 import org.apache.flink.util.Collector
 
@@ -29,6 +28,8 @@ object cogroupFunctions {
       }
     }
   }
+  // TODO: rename to better reflect that this doesn't allow multiplicity
+  // on the left hand side
   def cgfLeftOuter[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
                         idFromX:X=>String, idFromY:Y=>String,
                         tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (X, Option[Y])]() {
@@ -44,6 +45,8 @@ object cogroupFunctions {
       }
     }
   }
+  // TODO: rename to better reflect that this doesn't allow multiplicity
+  // on the left hand side
   def cgfLeftOuterSeq[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
                            idFromX:X=>String, idFromY:Y=>String,
                            tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (X, Seq[Y])]() {

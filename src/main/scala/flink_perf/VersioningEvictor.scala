@@ -7,8 +7,6 @@ import org.apache.flink.streaming.api.windowing.evictors.Evictor
 import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 
-import scala.collection.mutable
-
 class VersioningEvictor[X,Y](
                               keyFromX: X => String, keyFromY: Y => String,
                               idFromX: X => String, idFromY: Y => String,
@@ -28,5 +26,4 @@ class VersioningEvictor[X,Y](
       versionDeduplicator.deduplicateMutable(idFromX, idFromY, tsFromX, tsFromY, elements)
     }
   }
-
 }

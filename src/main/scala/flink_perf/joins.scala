@@ -1,15 +1,10 @@
 package flink_perf
 
-import collection.JavaConverters._
-import org.apache.flink.api.common.functions.CoGroupFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
-import org.apache.flink.util.Collector
-
-import scala.collection.mutable
 
 object joins {
   def JoinFullOuter[X,Y](dsx2: DataStream[X], dsy2: DataStream[Y],
