@@ -12,7 +12,8 @@ import scala.collection.mutable
 class VersioningEvictor[X,Y](
                               keyFromX: X => String, keyFromY: Y => String,
                               idFromX: X => String, idFromY: Y => String,
-                              tsFromX: X => Long, tsFromY: Y => Long
+                              tsFromX: X => Long, tsFromY: Y => Long,
+                              numRecordsBetweenCleanup : Int = 5
                             ) extends Evictor[CoGroupedStreams.TaggedUnion[X,Y],GlobalWindow]
 {
   override def evictBefore(elements: lang.Iterable[TimestampedValue[CoGroupedStreams.TaggedUnion[X, Y]]], size: Int, window: GlobalWindow, evictorContext: Evictor.EvictorContext): Unit = {}
@@ -23,6 +24,9 @@ class VersioningEvictor[X,Y](
                            window: GlobalWindow,
                            evictorContext: Evictor.EvictorContext): Unit =
   {
+    if((size+1) % numRecordsBetweenCleanup > 0) {
+      return
+    }
     val newestX = mutable.Map[String,Long]()
     val newestY = mutable.Map[String,Long]()
     val iter1 = elements.iterator()
