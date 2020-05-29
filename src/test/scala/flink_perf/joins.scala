@@ -43,6 +43,7 @@ object joins {
       .equalTo(keyFromY)
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
+      .evictor(new VersioningEvictor(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY))
       .apply(cgfFullOuter[X,Y])
     joinxy
   }
@@ -75,6 +76,7 @@ object joins {
       .equalTo(keyFromY)
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
+      .evictor(new VersioningEvictor(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY))
       .apply(cgfLeftOuter[X,Y])
     joinxy
   }
@@ -124,6 +126,7 @@ object joins {
       .equalTo(keyFromY)
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
+      .evictor(new VersioningEvictor(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY))
       .apply(cgfLeftOuterSeq[X,Y](keyFromX, keyFromY,
         idFromX, idFromY,
         tsFromX, tsFromY))
@@ -173,6 +176,7 @@ object joins {
       .equalTo(keyFromY)
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
+      .evictor(new VersioningEvictor(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY))
       .apply(cgfFullOuterSeq[X,Y](keyFromX, keyFromY,
         idFromX, idFromY,
         tsFromX, tsFromY))
