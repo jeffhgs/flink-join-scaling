@@ -68,4 +68,18 @@ object cogroupFunctions {
       }
     }
   }
+  def cgfInner[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
+                        idFromX:X=>String, idFromY:Y=>String,
+                        tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (X, Y)]() {
+    override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(X, Y)]): Unit = {
+      val mp = versionDeduplicator.dedupeFullOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
+      for(v <- mp) {
+        if (!v._1.isEmpty && !v._2.isEmpty) {
+          for (x <- v._1)
+            for (y <- v._2)
+              out.collect((x, y))
+        }
+      }
+    }
+  }
 }
