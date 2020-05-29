@@ -1,6 +1,5 @@
 package flink_perf
 
-import flink_perf.joins.cgfFullOuter
 import flink_perf.sinks.TestSink1
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
 import org.apache.flink.streaming.api.scala._
