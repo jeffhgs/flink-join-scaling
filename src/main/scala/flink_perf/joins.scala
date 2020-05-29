@@ -97,9 +97,6 @@ object joins {
       if (tsFromY(y) > tsFromY(yPrev))
         v._2.update(idy, y)
     }
-//    val numX = mp.size
-//    val numY = mp.values.map(ab => ab._2.size).sum
-//    val vs = mp.values.map(v => (v._1, v._2.values.toSeq))
     mp.values.map(v => (v._1, v._2.values))
   }
 
