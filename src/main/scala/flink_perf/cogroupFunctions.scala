@@ -5,43 +5,42 @@ import org.apache.flink.api.common.functions.CoGroupFunction
 import org.apache.flink.util.Collector
 
 object cogroupFunctions {
-  def cgfFullOuter[X,Y] = new CoGroupFunction[X, Y, (Option[X], Option[Y])]() {
+  def cgfFullOuter[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
+                        idFromX:X=>String, idFromY:Y=>String,
+                        tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (Option[X], Option[Y])]() {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(Option[X], Option[Y])]): Unit = {
-      (xs.iterator().hasNext, ys.iterator().hasNext) match {
-        case (false, true) =>
-          for(y <- ys.asScala.iterator)
-            out.collect((None,Some(y)))
-        case (true, false) =>
-          for(x <- xs.asScala.iterator)
-            out.collect((Some(x),None))
-        case (true, true) =>
-          // TODO: check for degenerate join?
-          for(x <- xs.asScala.iterator) {
-            for(y <- ys.asScala.iterator) {
-              out.collect((Some(x),Some(y)))
+      val mp = versionDeduplicator.dedupeFullOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
+      for (v <- mp) {
+        if(v._1.isEmpty) {
+          for(y <- v._2) {
+            out.collect(None,Some(y))
+          }
+        } else {
+          for(x <- v._1) {
+            if(v._2.isEmpty)
+              out.collect(Some(x),None)
+            else {
+              for(y <- v._2) {
+                out.collect(Some(x),Some(y))
+              }
             }
           }
-        case (false, false) =>
-        // do nothing
+        }
       }
     }
   }
-  def cgfLeftOuter[X,Y] = new CoGroupFunction[X, Y, (X, Option[Y])]() {
+  def cgfLeftOuter[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
+                        idFromX:X=>String, idFromY:Y=>String,
+                        tsFromX:X=>Long, tsFromY:Y=>Long) = new CoGroupFunction[X, Y, (X, Option[Y])]() {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(X, Option[Y])]): Unit = {
-      (xs.asScala.iterator.hasNext, ys.asScala.iterator.hasNext) match {
-        case (false, true) =>
-        case (true, false) =>
-          for(x <- xs.asScala.iterator)
-            out.collect((x,None))
-        case (true, true) =>
-          // TODO: check for degenerate join?
-          for(x <- xs.asScala.iterator) {
-            for(y <- ys.asScala.iterator) {
-              out.collect((x,Some(y)))
-            }
-          }
-        case (false, false) =>
-        // do nothing
+      val mp = versionDeduplicator.dedupeLeftOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
+      for(v <- mp) {
+        if (v._2.isEmpty)
+          out.collect((v._1, None))
+        else {
+          for (y <- v._2)
+            out.collect((v._1, Some(y)))
+        }
       }
     }
   }

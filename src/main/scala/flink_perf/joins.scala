@@ -23,7 +23,7 @@ object joins {
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
       .evictor(new VersioningEvictor(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY))
-      .apply(cogroupFunctions.cgfFullOuter[X,Y])
+      .apply(cogroupFunctions.cgfFullOuter[X,Y](keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY))
     joinxy
   }
   def JoinLeftOuter[X,Y](dsx2: DataStream[X], dsy2: DataStream[Y],
@@ -37,7 +37,7 @@ object joins {
       .window(GlobalWindows.create())
       .trigger(CountTrigger.of(1))
       .evictor(new VersioningEvictor(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY))
-      .apply(cogroupFunctions.cgfLeftOuter[X,Y])
+      .apply(cogroupFunctions.cgfLeftOuter[X,Y](keyFromX,keyFromY,idFromX,idFromY,tsFromX,tsFromY))
     joinxy
   }
 
