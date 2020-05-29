@@ -25,7 +25,12 @@ object versionDeduplicator {
       if (tsFromY(y) > tsFromY(yPrev))
         v._2.update(idy, y)
     }
-    mp.values.map(v => (v._1, v._2.values))
+    mp.values.flatMap(v =>
+      v._1 match {
+        case None => Seq()
+        case Some(x) => Seq((x,v._2.values))
+      }
+    )
   }
 
   def dedupeFullOuterSeq[X,Y](keyFromX: X => String, keyFromY: Y => String, idFromX: X => String, idFromY: Y => String, tsFromX: X => Long, tsFromY: Y => Long, xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y]) = {

@@ -51,8 +51,10 @@ object cogroupFunctions {
     override def coGroup(xs: java.lang.Iterable[X], ys: java.lang.Iterable[Y], out: Collector[(X, Seq[Y])]): Unit = {
       val mp = versionDeduplicator.dedupeLeftOuterSeq(keyFromX, keyFromY, idFromX, idFromY, tsFromX, tsFromY, xs, ys)
       for(v <- mp) {
-        if (v._1.isDefined)
-          out.collect((v._1.get, v._2.toSeq))
+        if (v._2.isEmpty)
+          out.collect((v._1, Seq()))
+        else
+          out.collect((v._1, v._2.toSeq))
       }
     }
   }

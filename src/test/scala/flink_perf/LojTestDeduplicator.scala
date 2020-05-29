@@ -8,7 +8,7 @@ case class LojTestDeduplicator[X,Y](keyFromX:X=>String, keyFromY:Y=>String,
     val xs : Iterable[X] = xys.map(_._1)
     val ys : Iterable[Y] = xys.flatMap(_._2)
     val xyseq = versionDeduplicator.dedupeLeftOuterSeq[X,Y](keyFromX,keyFromY,idFromX,idFromY,tsFromX,tsFromY,xs.asJava,ys.asJava)
-    xyseq.flatMap(v => if(v._1.isEmpty) Seq() else Seq((v._1.get, v._2)))
+    xyseq
   }
 }
 
